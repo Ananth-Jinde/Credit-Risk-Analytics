@@ -6,11 +6,11 @@ derives new features, implements SCD Type 2 logic, and writes to
 the silver.dim_customers Delta table.
 
 Key transformations:
-  - Employment title standardization (500k+ unique → ~50 categories)
+  - Employment title standardization (500k+ unique → ~12 categories)
   - Employment length parsing and null imputation (mean fill)
   - Income outlier detection and capping (IQR method)
   - State code validation and region enrichment
-  - Derived features: income_bracket, credit_utilization, employment_stability
+  - Derived features: income_bracket, credit_utilization
   - SCD Type 2 tracking for grade, income, and home_ownership changes
 """
 
@@ -29,25 +29,6 @@ from src.utils.spark_utils import (
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
-
-# ─────────────────────────────────────────────────────────────────────
-# Employment Title Standardization Mapping
-# Maps freeform job titles (500k+ unique values) to canonical categories
-# ─────────────────────────────────────────────────────────────────────
-JOB_CATEGORY_RULES = {
-    "TRANSPORTATION": ["driver", "truck", "delivery", "cdl", "logistics", "freight", "pilot"],
-    "HEALTHCARE": ["nurse", "doctor", "physician", "medical", "dental", "pharmacy", "therapist", "hospital", "clinical", "health"],
-    "EDUCATION": ["teacher", "professor", "instructor", "principal", "school", "education", "tutor", "lecturer"],
-    "TECHNOLOGY": ["software", "developer", "engineer", "programmer", "analyst", "data", "tech", "it ", "network", "cyber", "devops"],
-    "FINANCE": ["accountant", "finance", "bank", "loan", "credit", "mortgage", "financial", "cpa", "auditor"],
-    "MANAGEMENT": ["manager", "director", "supervisor", "lead", "head", "vp ", "president", "chief", "executive"],
-    "SALES_MARKETING": ["sales", "marketing", "realtor", "agent", "broker", "retail", "representative"],
-    "LEGAL": ["attorney", "lawyer", "paralegal", "legal", "judge"],
-    "CONSTRUCTION": ["construction", "electrician", "plumber", "carpenter", "foreman", "mechanic", "welder"],
-    "MILITARY_GOV": ["military", "army", "navy", "marine", "police", "officer", "sergeant", "federal", "government", "gs-"],
-    "SERVICE": ["server", "bartender", "cook", "chef", "caregiver", "custodian", "housekeeper", "janitor"],
-}
-
 
 def extract_customer_columns(df: DataFrame) -> DataFrame:
     """Extract customer-relevant columns from the Bronze dataset.
@@ -107,6 +88,23 @@ def clean_emp_length(df: DataFrame) -> DataFrame:
     df = df.fillna({"emp_length": mean_emp_length})
     return df
 
+# ─────────────────────────────────────────────────────────────────────
+# Employment Title Standardization Mapping
+# Maps freeform job titles (500k+ unique values) to canonical categories
+# ─────────────────────────────────────────────────────────────────────
+JOB_CATEGORY_RULES = {
+    "TRANSPORTATION": ["driver", "truck", "delivery", "cdl", "logistics", "freight", "pilot"],
+    "HEALTHCARE": ["nurse", "doctor", "physician", "medical", "dental", "pharmacy", "therapist", "hospital", "clinical", "health"],
+    "EDUCATION": ["teacher", "professor", "instructor", "principal", "school", "education", "tutor", "lecturer"],
+    "TECHNOLOGY": ["software", "developer", "engineer", "programmer", "analyst", "data", "tech", "it ", "network", "cyber", "devops"],
+    "FINANCE": ["accountant", "finance", "bank", "loan", "credit", "mortgage", "financial", "cpa", "auditor"],
+    "MANAGEMENT": ["manager", "director", "supervisor", "lead", "head", "vp ", "president", "chief", "executive"],
+    "SALES_MARKETING": ["sales", "marketing", "realtor", "agent", "broker", "retail", "representative"],
+    "LEGAL": ["attorney", "lawyer", "paralegal", "legal", "judge"],
+    "CONSTRUCTION": ["construction", "electrician", "plumber", "carpenter", "foreman", "mechanic", "welder"],
+    "MILITARY_GOV": ["military", "army", "navy", "marine", "police", "officer", "sergeant", "federal", "government", "gs-"],
+    "SERVICE": ["server", "bartender", "cook", "chef", "caregiver", "custodian", "housekeeper", "janitor"],
+}
 
 def standardize_emp_title(df: DataFrame) -> DataFrame:
     """Standardize freeform employment titles into canonical categories.
