@@ -109,6 +109,33 @@ def normalize_term(df: DataFrame) -> DataFrame:
     )
 
 
+def standardize_loan_status(df: DataFrame) -> DataFrame:
+    """Standardize loan_status values into canonical categories.
+
+    Raw data has variations like 'Fully Paid', 'Current',
+    'Late (31-120 days)', 'Charged Off', etc.
+
+    Groups into: FULLY_PAID, CURRENT, LATE, GRACE_PERIOD, DEFAULT, CHARGED_OFF, OTHER
+
+    Args:
+        df: Loan DataFrame.
+
+    Returns:
+        DataFrame with standardized loan_status_category column.
+    """
+    status = F.lower(F.trim(F.col("loan_status")))
+
+    return df.withColumn(
+        "loan_status_category",
+        F.when(status.contains("fully paid"), "FULLY_PAID")
+        .when(status.contains("current"), "CURRENT")
+        .when(status.contains("grace"), "GRACE_PERIOD")
+        .when(status.contains("late"), "LATE")
+        .when(status.contains("charged off"), "CHARGED_OFF")
+        .when(status.contains("default"), "DEFAULT")
+        .otherwise("OTHER"),
+    )
+
 def add_loan_derived_features(df: DataFrame) -> DataFrame:
     """Add derived loan features for analytics.
 
@@ -145,34 +172,6 @@ def add_loan_derived_features(df: DataFrame) -> DataFrame:
                 F.round(F.col("funded_amount") / F.col("loan_amount"), 4),
             ).otherwise(F.lit(None)),
         )
-    )
-
-
-def standardize_loan_status(df: DataFrame) -> DataFrame:
-    """Standardize loan_status values into canonical categories.
-
-    Raw data has variations like 'Fully Paid', 'Current',
-    'Late (31-120 days)', 'Charged Off', etc.
-
-    Groups into: FULLY_PAID, CURRENT, LATE, GRACE_PERIOD, DEFAULT, CHARGED_OFF, OTHER
-
-    Args:
-        df: Loan DataFrame.
-
-    Returns:
-        DataFrame with standardized loan_status_category column.
-    """
-    status = F.lower(F.trim(F.col("loan_status")))
-
-    return df.withColumn(
-        "loan_status_category",
-        F.when(status.contains("fully paid"), "FULLY_PAID")
-        .when(status.contains("current"), "CURRENT")
-        .when(status.contains("grace"), "GRACE_PERIOD")
-        .when(status.contains("late"), "LATE")
-        .when(status.contains("charged off"), "CHARGED_OFF")
-        .when(status.contains("default"), "DEFAULT")
-        .otherwise("OTHER"),
     )
 
 
