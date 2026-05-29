@@ -50,16 +50,21 @@
 - Scores across 3 weighted criteria: payment history (20%), default history (45%), financial health (35%)
 - Produces a composite score and letter grade (A through F)
 
-## Orchestration: Databricks Lakeflow Jobs
+## Orchestration & Deployment: DAB + Lakeflow Jobs
 
-The pipeline runs as a 3-task workflow:
+The pipeline runs as a **Lakeflow Job** defined as-code via **Databricks Asset Bundles (DAB)**:
 
 ```
 Task 1: Bronze Ingestion  --->  Task 2: Silver Transforms  --->  Task 3: Gold Analytics
     (01_bronze_ingestion)         (02_silver_transformations)      (03_gold_analytics)
 ```
 
-- **Schedule**: Daily (configurable via Lakeflow Job settings)
-- **Retry**: 2 retries on failure with backoff
+- **Job definition**: `resources/credit_risk_job.yml` (tasks, dependencies, schedule, retry, cluster)
+- **DAB config**: `databricks.yml` (dev/prod targets, service principal for production)
+- **Deploy**: `databricks bundle deploy -t dev` (or `-t prod`)
+- **Schedule**: Daily at 2:00 AM IST
+- **Retry**: 2 retries on failure with 60s backoff
 - **Compute**: Jobs compute cluster (cheaper than interactive)
 - **Alerts**: Email notification on failure
+
+DAB handles **full lifecycle management** — both code deployment (notebooks + src/) and orchestration (Lakeflow Job). No manual UI setup needed.

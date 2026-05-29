@@ -41,7 +41,8 @@ An end-to-end data engineering pipeline on **Azure Databricks** that processes *
 | Storage | Delta Lake (ACID, Time Travel) |
 | Governance | Unity Catalog (3-level namespace) |
 | Processing | PySpark 3.5+ |
-| Orchestration | Databricks Lakeflow Jobs |
+| Orchestration | Databricks Lakeflow Jobs (defined as-code via DAB) |
+| Deployment | Databricks Asset Bundles (dev/prod with service principal) |
 | Testing | Pytest |
 | Language | Python 3.10+ |
 
@@ -51,11 +52,15 @@ An end-to-end data engineering pipeline on **Azure Databricks** that processes *
 
 ```
 credit-risk-analytics/
+├── databricks.yml                    # DAB root config (dev/prod targets)
+├── resources/                        # DAB resource definitions
+│   └── credit_risk_job.yml           # Lakeflow Job: 3-task DAG (Bronze→Silver→Gold)
+│
 ├── notebooks/                        # Databricks notebooks
 │   ├── 01_bronze_ingestion.py        # CSV → Bronze Delta table
 │   ├── 02_silver_transformations.py  # Bronze → 4 Silver tables
 │   ├── 03_gold_analytics.py          # Silver → Gold risk scores
-│   └── 04_orchestrator.py            # Full pipeline runner
+│   └── 04_orchestrator.py            # Dev/test: full pipeline runner
 │
 ├── src/                              # Modular Python packages
 │   ├── config/settings.py            # Centralized configuration
@@ -88,20 +93,26 @@ credit-risk-analytics/
 
 1. **Clone** the repo and connect it to Databricks (Workspace → Repos → Add Repo)
 2. **Upload** the CSV to Volume: `/Volumes/credit_risk_analytics/bronze/landing/`
-3. **Run** notebooks in order: `01` → `02` → `03`
-
-See [Deployment Guide](docs/deployment_guide.md) for detailed setup instructions.
+3. **Deploy DAB**: `databricks bundle deploy -t dev` (deploys notebooks + Lakeflow Job)
+4. **Run**: Trigger the Lakeflow Job from Workflows, or run notebooks manually: `01` → `02` → `03`
 
 ---
 
 ## Pipeline Orchestration
 
-Orchestrated via **Databricks Lakeflow Jobs** as a 3-task DAG:
+Orchestrated via a **Databricks Lakeflow Job**, defined as-code in [`resources/credit_risk_job.yml`](resources/credit_risk_job.yml) and deployed via **Databricks Asset Bundles**:
 
 ```
 Bronze Ingestion  →  Silver Transforms  →  Gold Analytics
     (Task 1)            (Task 2)            (Task 3)
 ```
+
+- **Defined as-code**: The job YAML specifies tasks, dependencies, schedule, retry, and cluster config
+- **Deployed via DAB**: `databricks bundle deploy -t dev` (or `-t prod` for production)
+- **Schedule**: Daily at 2:00 AM IST
+- **Retry**: 2 retries per task on failure
+- **Compute**: Jobs cluster (cheaper than interactive)
+- **Alerts**: Email notification on failure
 
 ---
 

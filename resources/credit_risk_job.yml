@@ -1,0 +1,67 @@
+# Lakeflow Job — Credit Risk Analytics Pipeline
+#
+# This defines the production orchestration as a 3-task sequential DAG.
+# Each task runs one notebook with proper dependency ordering.
+#
+# Deployed via: databricks bundle deploy -t dev (or -t prod)
+# This replaces manual job creation in the Databricks UI.
+
+resources:
+  jobs:
+    credit_risk_pipeline:
+      name: "credit_risk_analytics_pipeline"
+      description: "End-to-end Credit Risk Analytics pipeline: Bronze → Silver → Gold"
+
+      # ── Schedule ──
+      schedule:
+        quartz_cron_expression: "0 0 2 * * ?"   # Daily at 2:00 AM
+        timezone_id: "Asia/Kolkata"
+
+      # ── Email alerts on failure ──
+      email_notifications:
+        on_failure:
+          - "data-engineering-alerts@company.com"
+
+      # ── Task DAG: Bronze → Silver → Gold ──
+      tasks:
+        - task_key: "bronze_ingestion"
+          description: "Ingest raw CSV → Bronze Delta table"
+          notebook_task:
+            notebook_path: ../notebooks/01_bronze_ingestion.py
+          job_cluster_key: "pipeline_cluster"
+          retry_on_timeout: true
+          max_retries: 2
+          min_retry_interval_millis: 60000
+
+        - task_key: "silver_transformations"
+          description: "Bronze → 4 Silver tables (dim_customers, fact_loans, fact_loan_repayments, dim_loan_defaulters)"
+          depends_on:
+            - task_key: "bronze_ingestion"
+          notebook_task:
+            notebook_path: ../notebooks/02_silver_transformations.py
+          job_cluster_key: "pipeline_cluster"
+          retry_on_timeout: true
+          max_retries: 2
+          min_retry_interval_millis: 60000
+
+        - task_key: "gold_analytics"
+          description: "Silver → Gold credit risk scores (weighted multi-criteria model)"
+          depends_on:
+            - task_key: "silver_transformations"
+          notebook_task:
+            notebook_path: ../notebooks/03_gold_analytics.py
+          job_cluster_key: "pipeline_cluster"
+          retry_on_timeout: true
+          max_retries: 2
+          min_retry_interval_millis: 60000
+
+      # ── Job Cluster (cheaper than interactive) ──
+      job_clusters:
+        - job_cluster_key: "pipeline_cluster"
+          new_cluster:
+            spark_version: "14.3.x-scala2.12"
+            num_workers: 2
+            node_type_id: "Standard_DS3_v2"
+            spark_conf:
+              spark.sql.extensions: "io.delta.sql.DeltaSparkSessionExtension"
+              spark.sql.catalog.spark_catalog: "org.apache.spark.sql.delta.catalog.DeltaCatalog"

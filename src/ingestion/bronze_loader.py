@@ -18,7 +18,7 @@ from src.config.settings import CatalogConfig, BronzeConfig
 from src.utils.spark_utils import add_audit_columns
 from src.utils.logger import get_logger
 
-logger = get_logger(__name__)
+logger = get_logger(__name__) #Dunder variable 
 
 # Explicit schema for the raw loan data CSV.
 # We define this explicitly instead of using inferSchema for:

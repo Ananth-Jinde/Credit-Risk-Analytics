@@ -25,6 +25,7 @@ ENV/
 
 # Databricks
 .databricks/
+bundle.lock.json
 
 # OS
 .DS_Store

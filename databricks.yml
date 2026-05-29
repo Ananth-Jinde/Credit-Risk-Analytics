@@ -1,0 +1,37 @@
+# Databricks Asset Bundles — Full Lifecycle Management
+#
+# DAB handles BOTH deployment AND orchestration for this project.
+#
+#   1. Code deployment → notebooks + src/ modules to the workspace
+#   2. Lakeflow Job definition → 3-task DAG (Bronze → Silver → Gold)
+#
+# The Lakeflow Job is defined as-code in resources/credit_risk_job.yml,
+# deployed via `databricks bundle deploy`, and runs on a schedule.
+
+bundle:
+  name: credit_risk_analytics
+
+workspace:
+  host: https://adb-YOUR-WORKSPACE-ID.azuredatabricks.net
+
+include:
+  - resources/*.yml
+
+targets:
+  dev:
+    mode: development
+    default: true
+    workspace:
+      root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}
+
+  prod:
+    mode: production
+    workspace:
+      root_path: /Workspace/production/.bundle/${bundle.name}/${bundle.target}
+    permissions:
+      - level: CAN_VIEW
+        group_name: data-engineering-team
+      - level: CAN_MANAGE
+        group_name: data-platform-admins
+    run_as:
+      service_principal_name: credit-risk-pipeline-sp

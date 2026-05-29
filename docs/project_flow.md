@@ -202,7 +202,12 @@ Silver tables (joined by member_id and loan_id)
                                                           Total: ~15-20 min
 ```
 
-Orchestrated via **Databricks Lakeflow Jobs** — a 3-task DAG with dependency chain.
+Orchestrated via a **Databricks Lakeflow Job**, defined as-code in `resources/credit_risk_job.yml` and deployed via **Databricks Asset Bundles** (`databricks bundle deploy`).
+
+- **Schedule**: Daily at 2:00 AM IST
+- **Retry**: 2 retries per task on failure
+- **Compute**: Jobs cluster (cheaper than interactive)
+- **Alerts**: Email notification on failure
 
 ---
 

@@ -1,12 +1,16 @@
 # Databricks notebook source
 
 # MAGIC %md
-# MAGIC # 04 — Pipeline Orchestrator
+# MAGIC # 04 — Pipeline Orchestrator (Development / Testing)
 # MAGIC
 # MAGIC Runs the full pipeline end-to-end: Bronze → Silver → Gold.
 # MAGIC
-# MAGIC In production, set this up as a **Databricks Lakeflow Job** with 3 tasks
-# MAGIC (one per notebook) instead of running this orchestrator notebook manually.
+# MAGIC **This notebook is for development and testing only.**
+# MAGIC In production, the pipeline is orchestrated by a **Databricks Lakeflow Job**
+# MAGIC defined as-code in `resources/credit_risk_job.yml` and deployed via
+# MAGIC **Databricks Asset Bundles** (`databricks bundle deploy`).
+# MAGIC The Lakeflow Job runs 3 separate tasks (one per notebook) with
+# MAGIC independent retry, monitoring, and a visual DAG.
 
 # COMMAND ----------
 
